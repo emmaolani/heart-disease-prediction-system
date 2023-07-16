@@ -4,7 +4,44 @@ import matplotlib.pyplot as plt
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 
-data = pd.read_csv("heart.csv")
+
+def val_for_defected_row(dfr, null):
+    temp_df = dfr
+    for i in range(len(null[0])):
+        tempdf = temp_df.drop(null[0][i])
+
+    value = np.array([])
+
+    for j in range(len(null[1])):
+        min_value = dfr.iloc[:, null[1][j]].min()
+        value = np.append(value, min_value)
+
+    return value
+
+
+def add_missing_val(dfr, nul_val, rep_val):
+    for i in range(len(rep_val)):
+        dfr.iat[nul_val[0][i], nul_val[1][i]] = rep_val[i]
+    return dfr
+
+
+data = pd.read_csv("processed.cleveland.csv", header=None)
+columns = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca',
+           'thal', 'target']
+data.columns = columns
+null_val = np.where(data == '?')
+replace_value = val_for_defected_row(data, null_val)
+data = add_missing_val(data, null_val, replace_value)
+
+data.loc[data['target'] > 1, 'target'] = 1
+
+print(null_val)
+print(data)
+print('value: ', replace_value)
+
+data = data.astype(float)
+df = data.to_numpy()
+print('array', df)
 
 # feature selection
 x = data.iloc[:, 0:13]
@@ -36,8 +73,6 @@ for i in range(0, len(weights)):
     weights[i] = (weights[i] - mean) / (maxi - mini)
 
 scaled_row = np.transpose(weights)
-
-
 slopes = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float)
 sub_slop = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float)
 intercept = 0
@@ -65,7 +100,6 @@ def loss_function():
     linear_reg = lin_regression()
     expon = np.exp(-1 * linear_reg)
     g = 1 / (expon + 1)
-
     # calculate (f(x)-y)x
     loss_funct = g - y
     return loss_funct
@@ -79,14 +113,13 @@ def logistic_regression():
         sub_slop[j] = derived
 
 
-for i in range(50000):
+for i in range(200000):
     logistic_regression()
     loss_int = loss_function()
     sub_intercept = loss_int.sum() / len(y)
 
     l = lo()
     sub_jw = -y * np.log(l) - (1 - y) * np.log(1 - l)
-
     jw = np.append(jw, sub_jw.sum() / len(y))
     iterations = np.append(iterations, i)
 
@@ -95,12 +128,6 @@ for i in range(50000):
 
     print(slopes)
     print(intercept)
-
-# [-0.7475503 - 1.77656537  2.53891356 - 1.73962548 - 1.72917586 - 0.07470799
-#  0.84354497  2.5658856 - 1.01970267 - 3.27534977  1.17877764 - 2.97173739
-#  - 2.63663567]
-# -0.11459411028268236
-
 
 print(jw)
 print(iterations)

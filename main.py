@@ -8,7 +8,7 @@ from sklearn.feature_selection import chi2
 def val_for_defected_row(dfr, null):
     temp_df = dfr
     for i in range(len(null[0])):
-        tempdf = temp_df.drop(null[0][i])
+        temp_df = temp_df.drop(null[0][i])
 
     value = np.array([])
 

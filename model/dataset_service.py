@@ -30,7 +30,6 @@ class DATASET:
 
     def __get_value_to_replace(self, null):
         temp_df = self.data
-        print(null[0])
         for i in range(len(null[0])):
             temp_df = temp_df.drop(null[0][i])
 

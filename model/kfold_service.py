@@ -7,7 +7,8 @@ class KFOLD:
         self.old_dataset = old_dataset
         self.pos = [0, 0]
         self.partition = int(len(old_dataset.getter_data().to_numpy()) / 5)
-        self.new_dataset = np.zeros((5, self.partition, 14))
+        self.new_dataset = np.zeros((303, 14))
+        self.new_index = 0
 
     def __check_ratio_of_class(self):
         class_counts = self.old_dataset.getter_data()['target'].value_counts()
@@ -21,43 +22,45 @@ class KFOLD:
         num_pos_par = int((per[1] * self.partition) / 100)
         old_df = self.old_dataset.getter_data().to_numpy()
         old_df = old_df.astype(float)
-
         total_num_col = len(old_df[0]) - 1
-        # print(self.new_dataset)
 
         for i in range(self.k):
-            neg = 0
-            posi = 0
-            non_zero_rows_mask = np.any(self.new_dataset[i] != 0, axis=1)
+            non_zero_rows_mask = np.any(self.new_dataset != 0, axis=1)
             num_non_zero_rows = np.sum(non_zero_rows_mask)
-            while (num_non_zero_rows <= num_pos_par) and self.pos[0] < len(old_df):
+            num_of_class = num_non_zero_rows - ((i * 27) + (i * 33))
+
+            while (num_of_class <= num_pos_par) and self.pos[0] < len(old_df):
                 if old_df[self.pos[0]][total_num_col] == 1:
-                    self.new_dataset[i][posi] = old_df[self.pos[0]]
-                    posi = posi + 1
-                    neg = neg + 1
+                    self.new_dataset[self.new_index] = old_df[self.pos[0]]
+                    self.new_index = self.new_index + 1
                 self.pos[0] = self.pos[0] + 1
-                non_zero_rows_mask = np.any(self.new_dataset[i] != 0, axis=1)
+                non_zero_rows_mask = np.any(self.new_dataset != 0, axis=1)
                 num_non_zero_rows = np.sum(non_zero_rows_mask)
+                num_of_class = num_non_zero_rows - ((i * 27) + (i * 33))
 
-            while (num_non_zero_rows <= (num_neg_par + num_pos_par)) and self.pos[1] < len(old_df):
+            while (num_of_class <= (num_neg_par + num_pos_par)) and self.pos[1] < len(old_df):
                 if old_df[self.pos[1]][total_num_col] == 0:
-                    self.new_dataset[i][neg] = old_df[self.pos[1]]
-                    neg = neg + 1
-                    posi = posi + 1
+                    self.new_dataset[self.new_index] = old_df[self.pos[1]]
+                    self.new_index = self.new_index + 1
+                # print(self.pos[1])
                 self.pos[1] = self.pos[1] + 1
-                non_zero_rows_mask = np.any(self.new_dataset[i] != 0, axis=1)
+                non_zero_rows_mask = np.any(self.new_dataset != 0, axis=1)
                 num_non_zero_rows = np.sum(non_zero_rows_mask)
+                num_of_class = num_non_zero_rows - ((i * 27) + (i * 33))
 
-            # if i == 4:
-            #     for j in range(self.pos[0], len(old_df) - 1):
-            #         if old_df[self.pos[0]][total_num_col] == 1:
-            #             self.new_dataset[i] = self.new_dataset[i].reshape(1, -1)
-            #             self.new_dataset[i] = np.vstack((self.new_dataset[i], old_df[self.pos[0]]))
-            #             self.pos[0] = self.pos[0] + 1
-            #
-            #     for l in range(self.pos[1], len(old_df) - 1):
-            #         if old_df[self.pos[1]][total_num_col] == 0:
-            #             self.new_dataset[i] = np.vstack((self.new_dataset[i], old_df[self.pos[1]]))
-            #             self.pos[1] = self.pos[1] + 1
+            if i == 4:
+                if self.pos[0] != len(old_df):
+                    for j in range(self.pos[0]-1, len(old_df) - 1):
+                        if old_df[j][total_num_col] == 1:
+                            self.new_dataset[self.new_index] = old_df[j]
+                            self.new_index = self.new_index + 1
 
+                if self.pos[1] != len(old_df):
+                    for j in range(self.pos[1]-1, len(old_df) - 1):
+                        if old_df[j][total_num_col] == 0:
+                            self.new_dataset[self.new_index] = old_df[j]
+                            self.new_index = self.new_index + 1
+
+        # print(self.pos[0])
+        # print(self.pos[1])
         return self.new_dataset

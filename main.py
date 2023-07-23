@@ -26,6 +26,7 @@ def add_missing_val(dfr, nul_val, rep_val):
 
 
 data = pd.read_csv("processed.cleveland.csv", header=None)
+
 columns = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca',
            'thal', 'target']
 data.columns = columns
@@ -113,7 +114,7 @@ def logistic_regression():
         sub_slop[j] = derived
 
 
-for i in range(200000):
+for i in range(10000):
     logistic_regression()
     loss_int = loss_function()
     sub_intercept = loss_int.sum() / len(y)

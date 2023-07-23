@@ -1,3 +1,4 @@
+from model.model_service import LOGISTIC_REGRESSION_MODEL
 import numpy as np
 
 
@@ -6,13 +7,13 @@ class KFOLD:
         self.k = 5
         self.old_dataset = old_dataset
         self.pos = [0, 0]
-        self.partition = int(len(old_dataset.getter_data().to_numpy()) / 5)
-        self.new_dataset = np.zeros((303, 14))
+        self.partition = int(len(old_dataset.to_numpy()) / 5)
+        self.new_dataset = np.zeros((303, old_dataset.shape[1]))
         self.new_index = 0
 
     def __check_ratio_of_class(self):
-        class_counts = self.old_dataset.getter_data()['target'].value_counts()
-        total_samples = len(self.old_dataset.getter_data())
+        class_counts = self.old_dataset['target'].value_counts()
+        total_samples = len(self.old_dataset)
         class_percentages = class_counts / total_samples * 100
         return class_percentages.to_numpy()
 
@@ -20,7 +21,7 @@ class KFOLD:
         per = np.trunc(self.__check_ratio_of_class())
         num_neg_par = int((per[0] * self.partition) / 100)
         num_pos_par = int((per[1] * self.partition) / 100)
-        old_df = self.old_dataset.getter_data().to_numpy()
+        old_df = self.old_dataset.to_numpy()
         old_df = old_df.astype(float)
         total_num_col = len(old_df[0]) - 1
 
@@ -61,6 +62,11 @@ class KFOLD:
                             self.new_dataset[self.new_index] = old_df[j]
                             self.new_index = self.new_index + 1
 
-        # print(self.pos[0])
-        # print(self.pos[1])
         return self.new_dataset
+
+    def five_kfold(self):
+        for i in range(self.k):
+            logistic_regression = LOGISTIC_REGRESSION_MODEL(self.new_dataset, 6, i, self.partition)
+            logistic_regression.train_model()
+
+

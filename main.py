@@ -1,137 +1,67 @@
-import numpy as np
+from tkinter import *
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import chi2
+from model.dataset_service import DATASET
+from model.feature_selection import FEATURE_SELECTION
+from sklearn.model_selection import cross_val_score, cross_val_predict
+from sklearn.metrics import precision_score, recall_score
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+import numpy as np
 
 
-def val_for_defected_row(dfr, null):
-    temp_df = dfr
-    for i in range(len(null[0])):
-        temp_df = temp_df.drop(null[0][i])
+def main_pro(loc, root):
+    N = 13
+    min_N = 4
 
-    value = np.array([])
+    data = pd.read_csv(loc, header=None)
+    dataset = DATASET(data)
+    dataset.clean_data()
 
-    for j in range(len(null[1])):
-        min_value = dfr.iloc[:, null[1][j]].min()
-        value = np.append(value, min_value)
+    metrics = []
 
-    return value
+    while N >= min_N:
+        selected_feature = FEATURE_SELECTION(dataset, N)
+        selected_feature.select_feature()
 
+        df = selected_feature.getter()
 
-def add_missing_val(dfr, nul_val, rep_val):
-    for i in range(len(rep_val)):
-        dfr.iat[nul_val[0][i], nul_val[1][i]] = rep_val[i]
-    return dfr
+        X, y = df.iloc[:, 0:N], df['target']
 
+        naive = GaussianNB()
+        svm_model = SVC(kernel='linear')
+        dt_classifier = DecisionTreeClassifier(random_state=42)
 
-data = pd.read_csv("processed.cleveland.csv", header=None)
+        cv_accuracy_scores_N = cross_val_score(naive, X, y, cv=10, scoring='accuracy')
+        cv_accuracy_scores_S = cross_val_score(svm_model, X, y, cv=10, scoring='accuracy')
 
-columns = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca',
-           'thal', 'target']
-data.columns = columns
-null_val = np.where(data == '?')
-replace_value = val_for_defected_row(data, null_val)
-data = add_missing_val(data, null_val, replace_value)
+        cv_predictions_S = cross_val_predict(svm_model, X, y, cv=10)
+        cv_predictions_N = cross_val_predict(naive, X, y, cv=10)
 
-data.loc[data['target'] > 1, 'target'] = 1
+        precision_N = precision_score(y, cv_predictions_N, average='weighted')
+        recall_N = recall_score(y, cv_predictions_N, average='weighted')
 
-print(null_val)
-print(data)
-print('value: ', replace_value)
+        precision_S = precision_score(y, cv_predictions_S, average='weighted')
+        recall_S = recall_score(y, cv_predictions_S, average='weighted')
 
-data = data.astype(float)
-df = data.to_numpy()
-print('array', df)
+        accuracy_scores_DT = cross_val_score(dt_classifier, X, y, cv=10, scoring='accuracy')
+        cv_predictions_DT = cross_val_predict(dt_classifier, X, y, cv=10)
+        precision_DT = precision_score(y, cv_predictions_DT, average='weighted')
+        recall_DT = recall_score(y, cv_predictions_DT, average='weighted')
 
-# feature selection
-x = data.iloc[:, 0:13]
-y = data.iloc[:, -1]
+        # print("Mean Cross-validation Accuracy for Naive:", cv_accuracy_scores_N.mean())
+        # print("precision for Naive:", precision_N)
+        # print("recall Naive:", recall_N)
+        #
+        # print("Mean Cross-validation Accuracy for SVM:", cv_accuracy_scores_S.mean())
+        # print("precision for SVM:", precision_S)
+        # print("recall SVM:", recall_S)
+        #
+        # print("Mean accuracy DT:", np.mean(accuracy_scores_DT))
+        # print("precision for DT:", precision_DT)
+        # print("recall DT:", recall_DT)
 
-# apply SelectKBest class to extract top 5 feature
-best_features = SelectKBest(score_func=chi2, k=13)
-fit = best_features.fit(x, y)
+        N -= 1
 
-df_scores = pd.DataFrame(fit.scores_)
-df_columns = pd.DataFrame(x.columns)
-
-features_scores = pd.concat([df_columns, df_scores], axis=1)
-features_scores.columns = ['specs', 'scores']
-print(features_scores)
-
-# logistic regression gradient descent
-
-y = data["target"].to_numpy()
-
-row = x.to_numpy()
-target = data.iloc[:, -1].to_numpy()
-weights = np.transpose(row)
-
-for i in range(0, len(weights)):
-    mean = np.mean(weights[i])
-    maxi = np.max(weights[i])
-    mini = np.min(weights[i])
-    weights[i] = (weights[i] - mean) / (maxi - mini)
-
-scaled_row = np.transpose(weights)
-slopes = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float)
-sub_slop = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float)
-intercept = 0
-sub_intercept = 0
-learning_rate = 0.01
-jw = np.array([])
-iterations = np.array([])
-
-
-def lin_regression():
-    sub_reg = np.dot(scaled_row, slopes.reshape(-1, 1))
-    reg = sub_reg.ravel() + intercept
-    return reg
-
-
-def lo():
-    linear_reg = lin_regression()
-    expon = np.exp(-1 * linear_reg)
-    expon = expon + 1
-    g = 1 / expon
-    return g
-
-
-def loss_function():
-    linear_reg = lin_regression()
-    expon = np.exp(-1 * linear_reg)
-    g = 1 / (expon + 1)
-    # calculate (f(x)-y)x
-    loss_funct = g - y
-    return loss_funct
-
-
-def logistic_regression():
-    loss_funct = loss_function()
-    for j in range(0, len(sub_slop)):
-        derived = loss_funct * weights[j]
-        derived = derived.sum() / len(y)
-        sub_slop[j] = derived
-
-
-for i in range(10000):
-    logistic_regression()
-    loss_int = loss_function()
-    sub_intercept = loss_int.sum() / len(y)
-
-    l = lo()
-    sub_jw = -y * np.log(l) - (1 - y) * np.log(1 - l)
-    jw = np.append(jw, sub_jw.sum() / len(y))
-    iterations = np.append(iterations, i)
-
-    slopes = slopes - (learning_rate * sub_slop)
-    intercept = intercept - (learning_rate * sub_intercept)
-
-    print(slopes)
-    print(intercept)
-
-print(jw)
-print(iterations)
-plt.scatter(iterations, jw, c="blue")
-plt.show()
-
+    print(metrics)
+    return metrics

@@ -4,9 +4,9 @@ import numpy as np
 class DATASET:
     def __init__(self, data):
         self.data = data
-        self.columns = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg', 'thalach', 'exang', 'oldpeak', 'slope',
-                   'ca',
-                   'thal', 'target']
+        self.columns = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg', 'thalach', 'exang', 'oldpeak',
+                        'slope',
+                        'ca', 'thal', 'target']
 
     def setter(self, data):
         self.data = data
@@ -59,6 +59,3 @@ class DATASET:
         replace_array = self.__get_value_to_replace(null_val)
         self.__add_missing_value(null_val, replace_array)
         self.__process_target()
-
-
-

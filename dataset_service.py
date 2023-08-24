@@ -26,6 +26,7 @@ class DATASET:
     def __get_null_val(self):
         df = self.data
         null_val = np.where(df == '?')
+        print(null_val)
         return null_val
 
     def __get_value_to_replace(self, null):
@@ -55,7 +56,7 @@ class DATASET:
 
     def clean_data(self):
         self.__add_columns()
-        null_val = self.__get_null_val()
-        replace_array = self.__get_value_to_replace(null_val)
-        self.__add_missing_value(null_val, replace_array)
+        # null_val = self.__get_null_val()
+        # replace_array = self.__get_value_to_replace(null_val)
+        # self.__add_missing_value(null_val, replace_array)
         self.__process_target()

@@ -1,8 +1,9 @@
+import math
 import pandas as pd
 import pickle
 from dataset_service import DATASET
-from feature_selection import  FEATURE_SELECTION
-from sklearn.svm import SVC
+from feature_selection import FEATURE_SELECTION
+from sklearn.metrics import precision_score, recall_score, accuracy_score
 import numpy as np
 
 label_value = ['Age', 'Sex', 'Cp', 'Trestbps', 'Chol', 'Fbs', 'Restecg', 'Thalch', 'Exang', 'Oldpeak', 'Slope',
@@ -11,6 +12,7 @@ label_value = ['Age', 'Sex', 'Cp', 'Trestbps', 'Chol', 'Fbs', 'Restecg', 'Thalch
 
 class Hpred:
     def __init__(self, inputs, state):
+        self.per_pre = []
         self.inputs = inputs
         self.state = state
         self.index = 0
@@ -103,48 +105,100 @@ class Hpred:
             return prediction
 
     def check_csv_validation(self):
-
         data = pd.read_csv(self.inputs, header=None)
         dataset = DATASET(data)
         dataset.clean_data()
         if self.state == 'N':
             X = dataset.getter_data().iloc[:, 0:13]
+            y = dataset.getter_data()['target']
             self.array_values = X.to_numpy()
             prediction = self.saved_naive_classifier.predict(self.array_values)
-            return prediction
+
+            accuracy = accuracy_score(y, prediction)
+            accuracy = math.trunc(accuracy * 100)
+
+            precision = precision_score(y, prediction, average='weighted')
+            precision = math.trunc(precision * 100)
+
+            recall = recall_score(y, prediction, average='weighted')
+            recall = math.trunc(recall * 100)
+
+            per_score = [accuracy, precision, recall]
+
+            self.per_pre.append(prediction)
+            self.per_pre.append(per_score)
+
+            return self.per_pre
+
         if self.state == 'D':
             X = dataset.getter_data().iloc[:, 0:13]
+            y = dataset.getter_data()['target']
+
             self.array_values = X.to_numpy()
             prediction = self.saved_dt_classifier.predict(self.array_values)
-            return prediction
+
+            accuracy = accuracy_score(y, prediction)
+            accuracy = math.trunc(accuracy * 100)
+
+            precision = precision_score(y, prediction, average='weighted')
+            precision = math.trunc(precision * 100)
+
+            recall = recall_score(y, prediction, average='weighted')
+            recall = math.trunc(recall * 100)
+
+            per_score = [accuracy, precision, recall]
+
+            self.per_pre.append(prediction)
+            self.per_pre.append(per_score)
+            
+            return self.per_pre
+
         if self.state == 'S':
             selected_feature = FEATURE_SELECTION(dataset, 11)
             selected_feature.select_feature()
+
             df = selected_feature.getter()
             X = df.iloc[:, 0:11]
+            y = dataset.getter_data()['target']
+
             self.array_values = X.to_numpy()
             prediction = self.saved_svm.predict(self.array_values)
-            return prediction
+
+            accuracy = accuracy_score(y, prediction)
+            accuracy = math.trunc(accuracy * 100)
+
+            precision = precision_score(y, prediction, average='weighted')
+            precision = math.trunc(precision * 100)
+
+            recall = recall_score(y, prediction, average='weighted')
+            recall = math.trunc(recall * 100)
+
+            per_score = [accuracy, precision, recall]
+
+            self.per_pre.append(prediction)
+            self.per_pre.append(per_score)
+
+            return self.per_pre
 
 
-# file_name_sv = 'finalize_svm.sav'
 # data = pd.read_csv('processed.cleveland.csv', header=None)
 # dataset = DATASET(data)
 # dataset.clean_data()
-#
-# selected_feature = FEATURE_SELECTION(dataset, 13)
+# selected_feature = FEATURE_SELECTION(dataset, 11)
 # selected_feature.select_feature()
 # df = selected_feature.getter()
-#
-# X, y = df.iloc[:, 0:11], df['target']
-# xa = X.to_numpy()
-# ya = y.to_numpy()
-#
-# SVM = SVC(kernel='linear')
-#
-# SVM.fit(xa, ya)
-# pickle.dump(SVM, open(file_name_sv, 'wb'))
+# X = df.iloc[:, 0:11]
+# y = dataset.getter_data()['target']
+# print(X)
 
+# svm_model = SVC(kernel='linear')
+# svm_model.fit(X.to_numpy(), y.to_numpy())
+#
+# pickle.dump(svm_model, open('finalize_svm.sav', 'wb'))
+# predict = svm_model.predict(X.to_numpy())
 
-# label_value_S = ['Age', 'Cp', 'Trestbps', 'Chol', 'Restecg', 'Thalch', 'Exang', 'Oldpeak', 'Slope', 'Ca', 'Thal']
-# n = np.array([[63, 1, 145, 1, 2, 150, 0, 2.3, 3, 0, 6]])
+# precision = precision_score(y, predict, average='weighted')
+# accuracy = accuracy_score(y, predict)
+# accuracy = math.trunc(accuracy * 100)
+# print(accuracy, precision)
+

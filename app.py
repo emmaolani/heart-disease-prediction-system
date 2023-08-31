@@ -2,27 +2,11 @@ from tkinter import *
 from tkinter import filedialog
 from models import Hpred
 from tkinter import messagebox
-from performance_gui import Performance_gui
 
 
 class App(Tk):
     def __init__(self, start_size):
         super().__init__()
-
-        # performance window
-        self.per_root = Toplevel()
-        # changing function of close button from destroying second window to hiding second window
-        self.per_root.protocol("WM_DELETE_WINDOW", self.hide_window_child)
-        self.per_root.config(bg='white')
-        self.per_root.title('Performance Evaluation')
-        # creating a canvas for second window to enable scrolling
-        self.canvas_win = Canvas(self.per_root, background='white')
-        self.scrollbar_win = Scrollbar(self.per_root, orient=VERTICAL, command=self.canvas_win.yview)
-        self.canvas_frame_win = Frame(self.canvas_win, background='white')
-        self.config_canvas(self.canvas_win, self.canvas_frame_win, self.scrollbar_win)
-        # hide toplevel window
-        self.per_root.withdraw()
-
         self.cf_left_label_input = []
         self.cf_right_label_input = []
 
@@ -34,12 +18,14 @@ class App(Tk):
 
         self.state = 'N'
         self.is_expanded = False
-        self.focus_index = 3
+        self.focus_index = 4
         self.focus_arr = []
         self.num_of_present = 0
         self.num_of_absent = 0
         self.performance_score = []
+        self.is_focus_on_canvas = False
 
+        # initializing the main window root
         self.title("heart disease prediction system")
         self.geometry(f'{start_size[0]}x{start_size[1]}')
         self.config(bg='white')
@@ -96,13 +82,39 @@ class App(Tk):
                                   command=self.get_prediction)
 
         self.show_input('N', False)
-        self.push_to_focus_cat()
 
+        # pushing all widget to an array to create the order of changing focus with button or tab
+        self.push_to_focus_cat()
+        self.make_focus_dynamic()
         # where to focus on start up
         self.focus_arr[self.focus_index].focus()
-
         self.bind('<Down>', lambda e: self.change_focus(e))
         self.bind('<Up>', lambda e: self.change_focus(e))
+
+        # function to place focus on canvas anytime area near input is clicked
+        self.place_focus_on_canvas()
+
+        # creating performance window
+        self.per_root = Toplevel()
+        # changing function of close button from destroying second window to hiding second window
+        self.per_root.protocol("WM_DELETE_WINDOW", self.hide_window_child)
+        self.per_root.config(bg='white')
+        self.per_root.title('Performance Evaluation')
+        # creating a canvas for second window to enable scrolling
+        self.canvas_win = Canvas(self.per_root, background='white')
+        self.scrollbar_win = Scrollbar(self.per_root, orient=VERTICAL, command=self.canvas_win.yview)
+        self.canvas_frame_win = Frame(self.canvas_win, background='white')
+        self.config_canvas(self.canvas_win, self.canvas_frame_win, self.scrollbar_win)
+        # hide toplevel window
+        self.per_root.withdraw()
+
+    def place_focus_on_canvas(self):
+        self.canvas_frame_wig.bind('<1>', lambda e: self.focus_on_canvas(e))
+        self.cf_left_wig.bind('<1>', lambda e: self.focus_on_canvas(e))
+        self.cf_right_wig.bind('<1>', lambda e: self.focus_on_canvas(e))
+
+    def focus_on_canvas(self, e):
+        self.is_focus_on_canvas = True
 
     # method to hide second window
     def hide_window_child(self):
@@ -110,16 +122,27 @@ class App(Tk):
 
     # method to change focus when down or up arrow is pressed
     def change_focus(self, event):
-        if event.keysym == 'Down':
-            if self.focus_index < len(self.focus_arr) - 1:
-                self.focus_index += 1
+        if not self.is_focus_on_canvas:
+            if event.keysym == 'Down':
+                if self.focus_index < len(self.focus_arr) - 1:
+                    self.focus_index += 1
+                else:
+                    self.focus_index = 0
             else:
-                self.focus_index = 0
+                if self.focus_index > 0:
+                    self.focus_index -= 1
+                else:
+                    self.focus_index = len(self.focus_arr) - 1
         else:
-            if self.focus_index > 0:
-                self.focus_index -= 1
+            if event.keysym == 'Down':
+                self.canvas.yview_scroll(1, "units")
+                if self.scrollbar.get()[1] == 1.0:
+                    self.is_focus_on_canvas = False
             else:
-                self.focus_index = len(self.focus_arr) - 1
+                self.canvas.yview_scroll(-1, "units")
+                if self.scrollbar.get()[0] == 0.0:
+                    self.is_focus_on_canvas = False
+        print(self.focus_index)
         self.focus_arr[self.focus_index].focus_set()
 
     # creating the catalogue for order up and down button to transverse through widget
@@ -127,11 +150,26 @@ class App(Tk):
         self.focus_arr.append(self.naive_btn)
         self.focus_arr.append(self.SVM_btn)
         self.focus_arr.append(self.DT_btn)
+        self.focus_arr.append(self.import_btn)
         for i in range(len(self.cf_left_label_input)):
             self.focus_arr.append(self.cf_left_label_input[i])
         for j in range(len(self.cf_right_label_input)):
             self.focus_arr.append(self.cf_right_label_input[j])
         self.focus_arr.append(self.predict_btn)
+
+    def make_focus_dynamic(self):
+        for i in range(len(self.focus_arr)):
+            self.focus_arr[i].bind('<1>', lambda e: self.change_num_focus_clicked(e.widget))
+
+    def change_num_focus_clicked(self, wid):
+        num = 0
+        for elements in self.focus_arr:
+            if elements == wid:
+                self.focus_index = num
+            num += 1
+
+        self.is_focus_on_canvas = False
+        print(self.focus_index)
 
     def get_response(self):
         response = messagebox.askquestion("Model score", "Do you want to view performance score")
@@ -143,9 +181,7 @@ class App(Tk):
             else:
                 header = 'Decision Tree '
 
-            Performance_gui(header,
-                            self.num_of_present,
-                            self.num_of_absent, self.performance_score, self.canvas_frame_win).pack()
+            self.performance_of_model(header)
             self.per_root.deiconify()
         else:
             pass
@@ -175,13 +211,12 @@ class App(Tk):
                         self.num_of_absent += 1
 
                 self.get_response()
-
                 self.num_of_present = 0
                 self.num_of_absent = 0
 
     def get_prediction(self):
         values = {}
-        # getting all inputs inputed and puting them in a dictionary
+        # getting all inputs inputted and putting them in a dictionary
         for i in range(len(self.cf_left_label_input)):
             if self.state == 'N' or self.state == 'D':
                 values[self.cf_left_label_value[i]] = self.cf_left_label_input[i].get()
@@ -229,12 +264,18 @@ class App(Tk):
         if is_clicked:
             self.cf_left_label_input = []
             self.cf_right_label_input = []
+
             self.cf_left_wig.pack_forget()
             self.cf_right_wig.pack_forget()
+
             self.cf_left_wig = Frame(self.canvas_frame_wig, padx=20, pady=30, background='lightgrey')
             self.cf_right_wig = Frame(self.canvas_frame_wig, padx=20, pady=30, background='lightgrey')
+
             self.cf_left_wig.pack(fill=BOTH, expand=True, side='left')
             self.cf_right_wig.pack(fill=BOTH, expand=True, side='left')
+
+            # function to place focus on canvas anytime area near input is clicked
+            self.place_focus_on_canvas()
             if state == 'N':
                 self.state = 'N'
                 sel_cf_left_label_value = self.cf_left_label_value
@@ -261,33 +302,29 @@ class App(Tk):
             sel_cf_right_label_value = self.cf_right_label_value
 
         for i in range(len(sel_cf_left_label_value)):
-            cont_frame3 = Frame(self.cf_left_wig, background='lightgrey')
-            cont_frame3.pack(fill=X, expand=True)
-            Label(cont_frame3, text=sel_cf_left_label_value[i], background='lightgrey').pack(anchor='w', padx=20)
-            input_box = Entry(cont_frame3, width=40, border=0)
+            Label(self.cf_left_wig, text=sel_cf_left_label_value[i], background='lightgrey').pack(anchor='w', padx=20)
+            input_box = Entry(self.cf_left_wig, width=40, border=0)
             input_box.pack(fill=X, expand=True, padx=20, pady=10, ipadx=5, ipady=5)
             self.cf_left_label_input.append(input_box)
 
         # widget for frame 4
         for i in range(len(sel_cf_right_label_value)):
-            cont_frame4 = Frame(self.cf_right_wig, background='lightgrey')
-            cont_frame4.pack(fill=X, expand=True)
-            Label(cont_frame4, text=sel_cf_right_label_value[i], background='lightgrey').pack(anchor='w', padx=20)
+            Label(self.cf_right_wig, text=sel_cf_right_label_value[i], background='lightgrey').pack(anchor='w', padx=20)
             if i == 5 and self.state == 'S':
-                Label(cont_frame4, width=40, border=0, background='lightgrey').pack(fill=X, expand=True, padx=20,
+                Label(self.cf_right_wig, width=40, border=0, background='lightgrey').pack(fill=X, expand=True, padx=20,
                                                                                     pady=10, ipadx=5, ipady=5)
             elif i == 6:
-                Label(cont_frame4, width=40, border=0, background='lightgrey').pack(fill=X, expand=True, padx=20,
+                Label(self.cf_right_wig, width=40, border=0, background='lightgrey').pack(fill=X, expand=True, padx=20,
                                                                                     pady=10, ipadx=5, ipady=5)
             else:
-                input_box = Entry(cont_frame4, width=40, border=0)
+                input_box = Entry(self.cf_right_wig, width=40, border=0)
                 input_box.pack(fill=X, expand=True, padx=20, pady=10, ipadx=5, ipady=5)
                 self.cf_right_label_input.append(input_box)
 
         if is_clicked:
             self.focus_arr = []
             self.push_to_focus_cat()
-            self.focus_index = 3
+            self.make_focus_dynamic()
 
     def reset_result_frame(self, res):
         self.canvas_frame_res_wig.pack_forget()
@@ -354,6 +391,83 @@ class App(Tk):
         create_canvas = canvas.create_window((0, 0), window=canvas_frame, anchor='nw')
         canvas_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
         canvas.bind('<Configure>', lambda e: canvas.itemconfig(create_canvas, width=e.width))
+
+    # method to create new performance card any time metrics score button is clicked
+    def performance_of_model(self, header):
+        per_header = Frame(self.canvas_frame_win, pady=10, padx=10, bg='lightblue')
+        head_label = Label(per_header, text=header + 'Performance Score', bg='lightblue',
+                           font=('Times', 16, 'bold'), padx=10, pady=10)
+
+        description_frame = Frame(self.canvas_frame_win, padx=10, pady=10, bg='white')
+
+        card_HPresent = Frame(description_frame, width=500, height=100, bg='#c5c6d0', padx=20, pady=20)
+        present_label = Label(card_HPresent,
+                              text='There are' + str(self.num_of_present) + ' patients with heart disease',
+                              bg='#c5c6d0', fg='#373737', font=('sans-serif', 12, 'bold'))
+        absence_label = Label(card_HPresent,
+                              text='There are' + str(self.num_of_absent) + ' patients without heart disease',
+                              bg='#c5c6d0', fg='#373737', font=('sans-serif', 12, 'bold'))
+
+        card_total = Frame(description_frame, width=500, height=100, bg='#c5c6d0')
+        total_label = Label(card_total,
+                            text='There are' + str(self.num_of_present + self.num_of_absent) + ' patients records',
+                            bg='#c5c6d0', fg='#373737', font=('sans-serif', 12, 'bold'), padx=50, pady=50)
+
+        metrics_frame = Frame(self.canvas_frame_win, padx=10, pady=10, bg='white')
+
+        accuracy_card = Frame(metrics_frame, width=322, height=100, bg='#c5c6d0')
+        accuracy_title = Label(accuracy_card,
+                               text='Accuracy',
+                               font=('Times', 16, 'bold'), pady=10, padx=10, bg='#c5c6d0', fg='#373737')
+        accuracy_score = Label(accuracy_card,
+                               text=str(self.performance_score[0]) + '%',
+                               font=('Times', 16, 'bold'), pady=10, padx=10, bg='#c5c6d0', fg='#373737')
+
+        precision_card = Frame(metrics_frame, width=322, height=100, bg='#c5c6d0')
+        precision_title = Label(precision_card,
+                                text='Precision',
+                                font=('Times', 16, 'bold'), pady=10, padx=10, bg='#c5c6d0', fg='#373737')
+        precision_score = Label(precision_card,
+                                text=str(self.performance_score[1]) + '%',
+                                font=('Times', 16, 'bold'), pady=10, padx=10, bg='#c5c6d0', fg='#373737')
+
+        recall_card = Frame(metrics_frame, width=322, height=100, bg='#c5c6d0')
+        recall_title = Label(recall_card,
+                             text='Recall',
+                             font=('Times', 16, 'bold'), pady=10, padx=10, bg='#c5c6d0', fg='#373737')
+        recall_score = Label(recall_card,
+                             text=str(self.performance_score[2]) + '%',
+                             font=('Times', 16, 'bold'), pady=10, padx=10, bg='#c5c6d0', fg='#373737')
+
+        # packing tje widget to the screen
+        per_header.pack(fill=X, side=TOP)
+        head_label.pack()
+
+        description_frame.pack(fill=BOTH)
+        card_HPresent.pack(side=LEFT, padx=10)
+        card_HPresent.pack_propagate(0)
+        present_label.pack(anchor='w')
+        absence_label.pack(anchor='w')
+
+        card_total.pack(side=LEFT, padx=10)
+        card_total.pack_propagate(0)
+        total_label.pack(anchor='center')
+
+        metrics_frame.pack(fill=BOTH)
+        accuracy_card.pack(side=LEFT, padx=10)
+        accuracy_card.pack_propagate(0)
+        accuracy_title.pack()
+        accuracy_score.pack()
+
+        precision_card.pack(side=LEFT, padx=10)
+        precision_card.pack_propagate(0)
+        precision_title.pack()
+        precision_score.pack()
+
+        recall_card.pack(side=LEFT, padx=10)
+        recall_card.pack_propagate(0)
+        recall_title.pack()
+        recall_score.pack()
 
 
 App((700, 600)).pack_widget()

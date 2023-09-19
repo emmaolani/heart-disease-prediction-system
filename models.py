@@ -215,30 +215,6 @@ class Hpred:
 # accuracy = math.trunc(accuracy * 100)
 # print(accuracy, precision)
 
-# self.cf_left_wig.pack_forget()
-        # self.cf_right_wig.pack_forget()
-        #
-        # self.cf_left_wig = Frame(self.canvas_frame_wig, padx=20, pady=26, background='lightgrey')
-        # self.cf_right_wig = Frame(self.canvas_frame_wig, padx=20, pady=30, background='lightgrey')
-        # self.cf_left_wig.pack(fill=BOTH, expand=True, side='left')
-        # self.cf_right_wig.pack(fill=BOTH, expand=True, side='left')
 
- # for i in range(len(sel_cf_left_label_value)):
-        #     Label(self.cf_left_wig,
-        #           text=sel_cf_left_label_value[i],
-        #           background='lightgrey', font=('sanserif', 12), fg='grey').pack(anchor='w', padx=20, side=TOP)
-        #     input_box = Entry(self.cf_left_wig, width=40, border=0)
-        #     input_box.pack(fill=X, padx=20, pady=10, ipadx=5, ipady=5, side=TOP)
-        #     self.cf_left_label_input.append(input_box)
-        #
-        # # widget for frame 4
-        # for i in range(len(sel_cf_right_label_value)):
-        #     Label(self.cf_right_wig,
-        #           text=sel_cf_right_label_value[i],
-        #           background='lightgrey', font=('sanserif', 11), fg='grey').pack(anchor='w', padx=20, side=TOP)
-        #
-        #     input_box = Entry(self.cf_right_wig, width=40, border=0)
-        #     input_box.pack(fill=X, padx=20, pady=10, ipadx=5, ipady=5, side=TOP)
-        #     self.cf_right_label_input.append(input_box)
 
-        # pushing all widget to an array to create the order of changing focus with button or tab
+

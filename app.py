@@ -6,6 +6,7 @@ from models import Hpred
 import pickle
 from datetime import datetime
 from performance_gui import Performance_gui
+from csv_gui import Csv_gui
 
 state_file = 'db/state.txt'
 model_file = 'db/model db.txt'
@@ -57,12 +58,14 @@ class App(Tk):
         self.focus_arr = []
 
         # creating performance window
-        self.root = Toplevel()
-        self.performance_gui = Performance_gui(self.root)
+        self.root_per = Toplevel()
+        self.performance_gui = Performance_gui(self.root_per)
+
+        self.root_csv = Toplevel()
+        self.csv_gui = Csv_gui(self.root_csv)
 
         # initializing the main window root
         self.title("heart disease prediction system")
-        # self.geometry(f'{start_size[0]}x{start_size[1]}', 500, 400)
         self.geometry('500x500+200+200')
 
         self.header_frame = Frame(self, bg='#F5F5F5', padx=20, pady=10, )
@@ -135,8 +138,8 @@ class App(Tk):
         self.options.config(padding=10)
         self.sub_menu = Menu(self.options, tearoff=False)
         self.sub_menu.add_command(label='Import CSV', command=self.get_prediction_csv)
-        self.sub_menu.add_command(label='Change CSV order')
-        self.sub_menu.add_command(label='History', command=self.show_history_widget)
+        self.sub_menu.add_command(label='Setting', command=self.csv_gui.show_csv_gui)
+        self.sub_menu.add_command(label='View logs', command=self.show_history_widget)
         self.options.configure(menu=self.sub_menu)
 
         self.history_frame = Frame(self.middle_frame, width=300, background='lightgrey')
@@ -238,13 +241,6 @@ class App(Tk):
 
         # function to place focus on canvas anytime area near input is clicked
         self.place_focus_on_canvas()
-
-        # creating order window
-        self.order_root = Toplevel()
-        self.order_root.protocol("WM_DELETE_WINDOW", self.hide_order_gui)
-        self.order_root.config(bg='white')
-        self.order_root.title('Performance Evaluation')
-        self.hide_order_gui()
 
     def place_focus_on_canvas(self):
         self.canvas_frame_wig.bind('<1>', lambda e: self.focus_on_canvas(e))
@@ -487,9 +483,6 @@ class App(Tk):
                     self.list_hist[i]["hist_del"] = id_del
 
         self.close_history_widget()
-
-    def hide_order_gui(self):
-        self.order_root.withdraw()
 
     # method to change focus when down or up arrow is pressed
     def change_focus(self, event):

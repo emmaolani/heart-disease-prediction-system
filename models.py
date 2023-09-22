@@ -216,5 +216,3 @@ class Hpred:
 # print(accuracy, precision)
 
 
-
-

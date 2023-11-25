@@ -1,7 +1,7 @@
 import math
 import pandas as pd
-from dataset_service import DATASET
-from feature_selection import FEATURE_SELECTION
+from old.dataset_service import DATASET
+from old.feature_selection import FEATURE_SELECTION
 from sklearn.metrics import precision_score, recall_score, accuracy_score
 import numpy as np
 import pickle
@@ -16,10 +16,8 @@ class Hpred:
         self.inputs = inputs
         self.state = state
         self.index = 0
-        self.saved_naive_classifier = pickle.load(open(
-            'finalize_naive.sav', 'rb+'))
-        self.saved_dt_classifier = pickle.load(open(
-            'finalize_dt.sav', 'rb+'))
+        self.saved_naive_classifier = pickle.load(open('finalize_naive.sav', 'rb+'))
+        self.saved_dt_classifier = pickle.load(open('finalize_dt.sav', 'rb+'))
         self.saved_svm = pickle.load(open('finalize_svm.sav', 'rb+'))
         if self.state == 'SVM':
             self.array_values = np.zeros((1, 11))
@@ -113,11 +111,9 @@ class Hpred:
             return self.per_pre
 
     def check_csv_validation(self, check_per):
-        data = pd.read_csv(self.inputs)
+        data = pd.read_csv(self.inputs, header=None)
         dataset = DATASET(data)
-        print(data)
         dataset.clean_data()
-
         if self.state == 'Naive Bayes':
             X = dataset.getter_data().iloc[:, 0:13]
             y = dataset.getter_data()['target']

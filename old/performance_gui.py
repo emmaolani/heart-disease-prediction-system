@@ -2,10 +2,10 @@ from tkinter import *
 
 
 class Performance_gui:
-    def __init__(self, root, show_per_page):
+    def __init__(self, root):
         self.root = root
         # changing function of close button from destroying second window to hiding second window
-        self.root.protocol("WM_DELETE_WINDOW", lambda: show_per_page(False))
+        self.root.protocol("WM_DELETE_WINDOW", self.hide_performance_gui)
         self.root.config(bg='white')
         self.root.title('Performance Evaluation')
 
@@ -96,35 +96,19 @@ class Performance_gui:
         self.recall_score.pack()
 
         # hiding window on start up
+        self.hide_performance_gui()
+
+    def hide_performance_gui(self):
         self.root.withdraw()
 
-    def render(self, model, performance, diagnosis, show_performance, update_show_per):
-        presence = 0
-        absence = 0
-        for i in diagnosis['diagnosis']:
-            if i == 1:
-                presence = presence + 1
-            else:
-                absence = absence + 1
-
+    def update_performance_gui(self, model, presence, absence, performance):
         self.head_label.configure(text=model)
         self.present_label.configure(text='There are ' + str(presence) + ' patients with heart disease')
         self.absence_label.configure(text='There are ' + str(absence) + ' patients without heart disease')
         self.total_label.configure(text='There are a total of ' + str(absence + presence) + ' patients')
-        if performance is not None:
-            self.accuracy_score.configure(text=str(performance[0]) + '%')
-            self.precision_score.configure(text=str(performance[1]) + '%')
-            self.recall_score.configure(text=str(performance[2]) + '%')
-        else:
-            self.accuracy_score.configure(text='')
-            self.precision_score.configure(text='')
-            self.recall_score.configure(text='')
+        self.accuracy_score.configure(text=str(performance[0]) + '%')
+        self.precision_score.configure(text=str(performance[1]) + '%')
+        self.recall_score.configure(text=str(performance[2]) + '%')
 
-        if show_performance:
-            self.root.deiconify()
-        else:
-            self.root.withdraw()
-
-        if show_performance is True and performance is None:
-            update_show_per(False)
-
+    def show_performance_gui(self):
+        self.root.deiconify()

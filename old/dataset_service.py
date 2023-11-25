@@ -19,14 +19,9 @@ class DATASET:
 
     def __add_columns(self):
         nc_dataset = self.data
-        try:
-            int(nc_dataset.columns[0])
-        except ValueError:
-            return
-        else:
-            columns = self.__getter_column()
-            nc_dataset.columns = columns
-            self.setter(nc_dataset)
+        columns = self.__getter_column()
+        nc_dataset.columns = columns
+        self.setter(nc_dataset)
 
     def __get_null_val(self):
         df = self.data
@@ -59,7 +54,7 @@ class DATASET:
         self.setter(df)
 
     def clean_data(self):
-        # self.__add_columns()
+        self.__add_columns()
         null_val = self.__get_null_val()
         replace_array = self.__get_value_to_replace(null_val)
         self.__add_missing_value(null_val, replace_array)
